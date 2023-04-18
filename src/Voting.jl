@@ -1,6 +1,7 @@
 module Voting
 
-export OrderedBallot, PluralityBallot, ApprovalBallot
+export OrderedBallot, PluralityBallot, ApprovalBallot,
+    OrderedBallotBundle
 export score, Plurality, Approval, Borda, InstantRunoff,
     STAR, RankedPairs, Copeland
 

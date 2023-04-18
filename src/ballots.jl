@@ -1,5 +1,7 @@
 abstract type Ballot end
 
+weight(::Ballot) = 1
+
 struct BallotContext{B <: Ballot, C}
     ballot::B
     candidates::Vector{C}
@@ -46,6 +48,21 @@ struct OrderedBallot <: StrictlyRankedBallot
     ranking::Vector{Int}
 end
 
+struct OrderedBallotBundle <: StrictlyRankedBallot
+    ranking::Vector{Int}
+    n::Int
+end
+
+ranking(b::OrderedBallot) = b.ranking
+ranking(b::OrderedBallotBundle) = b.ranking
+
+weight(b::OrderedBallotBundle) = b.n
+
+allcandidates(ballots::Vector{OrderedBallot}) =
+    Iterators.flatten((b.ranking for b in ballots)) |> unique |> sort
+allcandidates(ballots::Vector{OrderedBallotBundle}) =
+    Iterators.flatten((b.ranking for b in ballots)) |> unique |> sort
+
 function OrderedBallot(ranking::Vector{T}, candidates::Vector{T}) where {T}
     indices = indexin(ranking, candidates)
     all(!isnothing, indices) ||
@@ -53,21 +70,21 @@ function OrderedBallot(ranking::Vector{T}, candidates::Vector{T}) where {T}
     OrderedBallot(indices)
 end
 
-allcandidates(ballots::Vector{OrderedBallot}) =
-    Iterators.flatten((b.ranking for b in ballots)) |> unique |> sort
+OrderedBallotBundle(ranking::Vector{T}, candidates::Vector{T}, n::Int) where {T} =
+    OrderedBallotBundle(OrderedBallot(ranking, candidates).ranking, n)
 
 const RunoffOrderedBallot = Tuple{Int, OrderedBallot}
 
-Base.convert(::Type{PluralityBallot}, ballot::OrderedBallot) =
-    PluralityBallot(first(ballot.ranking))
+Base.convert(::Type{PluralityBallot}, ballot::StrictlyRankedBallot) =
+    PluralityBallot(first(ranking(ballot)))
 
-function preferencematrix(ballots::Vector{OrderedBallot})
+function preferencematrix(ballots::Vector{<:StrictlyRankedBallot})
     allcands = allcandidates(ballots)
     prefmat = zeros(Int, maximum(allcands), maximum(allcands))
     for ballot in ballots, i in 1:length(ballot.ranking), j in 1:i-1
-        vi, vj = ballot.ranking[i], ballot.ranking[j]
-        prefmat[vj, vi] += 1
-        prefmat[vi, vj] -= 1
+        vi, vj = ranking(ballot)[i], ranking(ballot)[j]
+        prefmat[vj, vi] += weight(ballot)
+        prefmat[vi, vj] -= weight(ballot)
     end
     prefmat
 end

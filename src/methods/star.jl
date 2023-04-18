@@ -11,7 +11,7 @@ function score(::STAR, ballots::Vector{ScoredBallot})
     allcands = allcandidates(ballots)
     scores = Dict(c => 0 for c in allcands)
     for ballot in ballots, (cand, cscore) in ballot.scores
-        scores[cand] += cscore
+        scores[cand] += cscore * weight(ballot)
     end
     rankedscores = sort(values(scores) |> scores, rev=true)
     runoff = if sum(rankedscores .== first(rankedscores)) == 1

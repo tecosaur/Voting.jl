@@ -15,6 +15,12 @@ ranked_2 = vcat(
     fill(OrderedBallot([4,3,2,1]), 15),
     fill(OrderedBallot([3,4,2,1]), 17))
 
+ranked_2w = [
+    OrderedBallotBundle([1,2,4,3], 42),
+    OrderedBallotBundle([2,4,3,1], 26),
+    OrderedBallotBundle([4,3,2,1], 15),
+    OrderedBallotBundle([3,4,2,1], 17)]
+
 @testset "Plurality" begin
     @test score(Plurality(), convert.(PluralityBallot, ranked_2)) ==
         Voting.CountSingleResult(Plurality(), 1, [1 => 42, 2 => 26, 3 => 17, 4 => 15])
