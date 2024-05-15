@@ -13,6 +13,7 @@ function ismonotonic end
 ismonotonic(::Type{Plurality}) = true
 ismonotonic(::Type{Approval}) = true
 ismonotonic(::Type{Borda}) = true
+ismonotonic(::Type{Copeland}) = true
 ismonotonic(::Type{InstantRunoff}) = false
 ismonotonic(::Type{STAR}) = true
 ismonotonic(::Type{RankedPairs}) = true
@@ -30,6 +31,7 @@ function hascondorcetwinner end
 hascondorcetwinner(::Type{Plurality}) = false
 hascondorcetwinner(::Type{Approval}) = false
 hascondorcetwinner(::Type{Borda}) = false
+hascondorcetwinner(::Type{Copeland}) = true
 hascondorcetwinner(::Type{InstantRunoff}) = false
 hascondorcetwinner(::Type{STAR}) = false
 hascondorcetwinner(::Type{RankedPairs}) = true
@@ -47,6 +49,7 @@ function hascondorcetloser end
 hascondorcetloser(::Type{Plurality}) = false
 hascondorcetloser(::Type{Approval}) = false
 hascondorcetloser(::Type{Borda}) = true
+hascondorcetloser(::Type{Copeland}) = true
 hascondorcetloser(::Type{InstantRunoff}) = true
 hascondorcetloser(::Type{STAR}) = true
 hascondorcetloser(::Type{RankedPairs}) = true
@@ -63,6 +66,7 @@ function hasmajority end
 
 hasmajority(::Type{Plurality}) = true
 hasmajority(::Type{Borda}) = false
+hasmajority(::Type{Copeland}) = true
 hasmajority(::Type{InstantRunoff}) = true
 hasmajority(::Type{STAR}) = false
 hasmajority(::Type{RankedPairs}) = true
@@ -79,6 +83,7 @@ function hasmajorityloser end
 
 hasmajorityloser(::Type{Plurality}) = false
 hasmajorityloser(::Type{Borda}) = true
+hasmajorityloser(::Type{Copeland}) = true
 hasmajorityloser(::Type{InstantRunoff}) = true
 hasmajorityloser(::Type{STAR}) = false
 hasmajorityloser(::Type{RankedPairs}) = true
@@ -96,6 +101,7 @@ function hasmutualmajority end
 
 hasmutualmajority(::Type{Plurality}) = false
 hasmutualmajority(::Type{Borda}) = true
+hasmutualmajority(::Type{Copeland}) = true
 hasmutualmajority(::Type{InstantRunoff}) = true
 hasmutualmajority(::Type{STAR}) = true
 hasmutualmajority(::Type{RankedPairs}) = true
@@ -111,6 +117,7 @@ function isindependntofclones end
 
 isindependntofclones(::Type{Plurality}) = false
 isindependntofclones(::Type{Borda}) = false
+isindependntofclones(::Type{Copeland}) = false
 isindependntofclones(::Type{InstantRunoff}) = true
 isindependntofclones(::Type{STAR}) = false
 isindependntofclones(::Type{RankedPairs}) = true
