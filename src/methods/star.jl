@@ -7,7 +7,7 @@ end
 
 winner(r::STARResult) = first(argmax(last, r.runoff))
 
-function score(::STAR, ballots::Vector{ScoredBallot{T}}) where {T}
+function elect(::STAR, ballots::Vector{ScoredBallot{T}}) where {T}
     allcands = allcandidates(ballots)
     scores = Dict(c => 0 for c in allcands)
     for ballot in ballots, (cand, cscore) in ballot.scores

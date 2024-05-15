@@ -1,6 +1,6 @@
 struct Plurality <: VotingMethod end
 
-function score(::Plurality, ballots::Vector{PluralityBallot{T}}; winners::Int=0) where {T}
+function elect(::Plurality, ballots::Vector{PluralityBallot{T}}; winners::Int=0) where {T}
     results = Dict{T, Int}()
     for ballot in ballots
         results[ballot.choice] =

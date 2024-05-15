@@ -24,7 +24,7 @@ function preferencepairs(prefmat::Matrix{Int}, candidates::AbstractVector{T}) wh
     sort(preferences, by=last, rev=true)
 end
 
-function score(::RankedPairs, ballots::Vector{<:StrictlyRankedBallot{T}}; winners::Int=0) where {T}
+function elect(::RankedPairs, ballots::Vector{<:StrictlyRankedBallot{T}}; winners::Int=0) where {T}
     winlist = T[]
     candidates = allcandidates(ballots)
     prefmat = preferencematrix(ballots, candidates)

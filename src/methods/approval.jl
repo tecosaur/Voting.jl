@@ -1,6 +1,6 @@
 struct Approval <: VotingMethod end
 
-function score(::Approval, ballots::Vector{ApprovalBallot}; winners::Int=0)
+function elect(::Approval, ballots::Vector{ApprovalBallot}; winners::Int=0)
     allcands = allcandidates(ballots)
     results = Dict(c => 0 for c in allcands)
     for ballot in ballots, choice in ballot.choices

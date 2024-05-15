@@ -4,7 +4,7 @@ using StyledStrings
 
 export OrderedBallot, PluralityBallot, ApprovalBallot,
     OrderedBallotBundle
-export score, Plurality, Approval, Borda, InstantRunoff,
+export elect, Plurality, Approval, Borda, InstantRunoff,
     STAR, RankedPairs, Copeland
 
 abstract type VotingMethod end

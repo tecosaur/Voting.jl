@@ -22,7 +22,7 @@ end
 
 winner(r::InstantRunoffResult) = first(argmax(last, r.counts))
 
-function score(irv::InstantRunoff, ballots::Vector{OrderedBallot{T}}) where {T}
+function elect(irv::InstantRunoff, ballots::Vector{OrderedBallot{T}}) where {T}
     candvotes = Dict{T, Vector{RunoffOrderedBallot}}()
     tallyhistory = Dict{T, Int}[]
     tiebreaks = 0
@@ -138,7 +138,7 @@ returned.
 """
 function tiebreak_borda(ballots::Vector{OrderedBallot{T}}, lastcands::Vector{T}) where {T}
     borda_score = filter((c, _)::Pair -> c in lastcands,
-                         score(Borda(), ballots).votes)
+                         elect(Borda(), ballots).votes)
     if sum(last.(borda_score) .== minimum(last.(borda_score))) == 1
         first(argmin(last, borda_score))
     end

@@ -1,6 +1,6 @@
 struct Borda <: VotingMethod end
 
-function score(::Borda, ballots::Vector{<:StrictlyRankedBallot}; winners::Int=0)
+function elect(::Borda, ballots::Vector{<:StrictlyRankedBallot}; winners::Int=0)
     allcands = allcandidates(ballots)
     results = Dict(c => 0 for c in allcands)
     for ballot in ballots
