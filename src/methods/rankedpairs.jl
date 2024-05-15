@@ -1,33 +1,37 @@
 struct RankedPairs <: VotingMethod end
 
-struct RankedPairsResult <: SingleResult
-    winner::Int
-    preferences::Vector{Tuple{Pair{Int, Int}, Int}}
+struct RankedPairsResult{T} <: SingleResult{T}
+    winner::T
+    preferences::Vector{Tuple{Pair{T, T}, Int}}
 end
 
 winner(r::RankedPairsResult) = r.winner
 
-struct RepeatedRankedPairsResult <: VotingMethod
-    winners::Vector{Int}
-    preferences::Vector{Tuple{Pair{Int, Int}, Int}}
+struct RepeatedRankedPairsResult{T} <: MultiResult{T}
+    winners::Vector{T}
+    preferences::Vector{Tuple{Pair{T, T}, Int}}
     prefmat::Matrix{Int}
 end
 
 winners(r::RepeatedRankedPairsResult) = r.winners
 
-function score(::RankedPairs, ballots::Vector{<:StrictlyRankedBallot}; winners::Int=0)
-    winlist = Int[]
-    prefmat = preferencematrix(ballots)
-    preferences = Tuple{Pair{Int, Int}, Int}[]
+function preferencepairs(prefmat::Matrix{Int}, candidates::AbstractVector{T}) where {T}
+    preferences = Tuple{Pair{T, T}, Int}[]
     for i in axes(prefmat, 1), j in axes(prefmat, 2)
-        push!(preferences, (i => j, prefmat[i, j]))
+        push!(preferences, (candidates[i] => candidates[j], prefmat[i, j]))
     end
     filter!(>(0) ∘ last, preferences)
-    sort!(preferences, by=last, rev=true)
+    sort(preferences, by=last, rev=true)
+end
+
+function score(::RankedPairs, ballots::Vector{<:StrictlyRankedBallot{T}}; winners::Int=0) where {T}
+    winlist = T[]
     candidates = allcandidates(ballots)
+    prefmat = preferencematrix(ballots, candidates)
+    preferences = preferencepairs(prefmat, candidates)
     while length(winlist) < max(1, winners)
-        edges = Set{Pair{Int, Int}}()
-        children = Set{Int}()
+        edges = Set{Pair{T, T}}()
+        children = Set{T}()
         for ((i, j), _) in preferences
             if i ∉ children && (j => i) ∉ edges
                 push!(children, j)

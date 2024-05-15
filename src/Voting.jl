@@ -1,5 +1,7 @@
 module Voting
 
+using StyledStrings
+
 export OrderedBallot, PluralityBallot, ApprovalBallot,
     OrderedBallotBundle
 export score, Plurality, Approval, Borda, InstantRunoff,
@@ -9,8 +11,7 @@ abstract type VotingMethod end
 
 include("ballots.jl")
 include("results.jl")
-
-include("methods/countresult.jl")
+include("countresult.jl")
 
 include("methods/plurality.jl")
 include("methods/approval.jl")

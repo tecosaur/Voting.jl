@@ -14,17 +14,17 @@ InstantRunoff(quota::Float64) = InstantRunoff(quota, :backwards)
 InstantRunoff(tiebreak::Symbol) = InstantRunoff(0.5, tiebreak)
 InstantRunoff() = InstantRunoff(0.5)
 
-struct InstantRunoffResult <: SingleResult
-    counts::Vector{Pair{Int, Int}}
+struct InstantRunoffResult{T} <: SingleResult{T}
+    counts::Vector{Pair{T, Int}}
     rounds::Int
     tiebreaks::Int
 end
 
 winner(r::InstantRunoffResult) = first(argmax(last, r.counts))
 
-function score(irv::InstantRunoff, ballots::Vector{OrderedBallot})
-    candvotes = Dict{Int, Vector{RunoffOrderedBallot}}()
-    tallyhistory = Dict{Int, Int}[]
+function score(irv::InstantRunoff, ballots::Vector{OrderedBallot{T}}) where {T}
+    candvotes = Dict{T, Vector{RunoffOrderedBallot}}()
+    tallyhistory = Dict{T, Int}[]
     tiebreaks = 0
     for cand in allcandidates(ballots)
         candvotes[cand] = RunoffOrderedBallot[]
@@ -32,18 +32,21 @@ function score(irv::InstantRunoff, ballots::Vector{OrderedBallot})
     for ballot in ballots
         push!(candvotes[first(ballot.ranking)], (1, ballot))
     end
-    while maximum(length.(values(candvotes))) < length(ballots) * irv.quota
-        push!(tallyhistory, Dict(c => length(v) for (c, v) in candvotes))
-        lastcands = foldl(function ((cands, minlen), (newcand, votes))
-                              if length(votes) > minlen
-                                  (cands, minlen)
-                              elseif length(votes) == minlen
+    totalweight = sum(weight, ballots)
+    rvsum(votes) = sum(weight ∘ last, votes, init=0)
+    while maximum(sum.(weight ∘ last, (values(candvotes)), init=0)) < totalweight * irv.quota
+        push!(tallyhistory, Dict(c => rvsum(v) for (c, v) in candvotes))
+        lastcands = foldl(function ((cands, minweight), (newcand, votes))
+                              vweight = rvsum(votes)
+                              if vweight > minweight
+                                  (cands, minweight)
+                              elseif vweight == minweight
                                   push!(cands, newcand)
-                                  (cands, minlen)
+                                  (cands, minweight)
                               else
-                                  ([newcand], length(votes))
+                                  ([newcand], vweight)
                               end
-                          end, candvotes, init=(Int[], length(ballots))) |> first
+                          end, candvotes, init=(T[], totalweight)) |> first
         eliminate = if length(lastcands) == 1
             first(lastcands)
         else
@@ -75,13 +78,13 @@ function score(irv::InstantRunoff, ballots::Vector{OrderedBallot})
             end
         end
     end
-    counts = [cand => length(votes) for (cand, votes) in candvotes]
+    counts = [cand => sum(weight ∘ last, votes) for (cand, votes) in candvotes]
     InstantRunoffResult(sort(counts, by=last, rev=true),
                         length(tallyhistory), tiebreaks)
 end
 
 """
-    tiebreak_forwards(rounds::Vector{Dict{Int, Int}}, lastcands::Vector{Int})
+    tiebreak_forwards(rounds::Vector{Dict{T, Int}}, lastcands::Vector{T}) where {T}
 
 Select for elimination the candidate from `lastcands` with the least
 (cumulative) votes at the earliest stage in the count (sweeping from the first
@@ -90,7 +93,7 @@ round to the last).
 If at no point any single candidate of `lastcands` had the least votes,
 `nothing` is returned.
 """
-function tiebreak_forwards(rounds::Vector{Dict{Int, Int}}, lastcands::Vector{Int})
+function tiebreak_forwards(rounds::Vector{Dict{T, Int}}, lastcands::Vector{T}) where {T}
     round = 0
     scores = zeros(Int, length(lastcands))
     while round < length(rounds) && sum(scores .== minimum(scores)) > 1
@@ -103,7 +106,7 @@ function tiebreak_forwards(rounds::Vector{Dict{Int, Int}}, lastcands::Vector{Int
 end
 
 """
-    tiebreak_backwards(rounds::Vector{Dict{Int, Int}}, lastcands::Vector{Int})
+    tiebreak_backwards(rounds::Vector{Dict{T, Int}}, lastcands::Vector{T}) where {T}
 
 Select for elimination the candidate from `lastcands` with the least
 (cumulative) votes at the most recent prior stage of the count (sweeping from
@@ -112,7 +115,7 @@ the last round to the first).
 If at no point any single candidate of `lastcands` had the least votes,
 `nothing` is returned.
 """
-function tiebreak_backwards(rounds::Vector{Dict{Int, Int}}, lastcands::Vector{Int})
+function tiebreak_backwards(rounds::Vector{Dict{T, Int}}, lastcands::Vector{T}) where {T}
     round = length(rounds)
     scores = zeros(Int, length(lastcands))
     while round > 0 && sum(scores .== minimum(scores)) > 1
@@ -125,7 +128,7 @@ function tiebreak_backwards(rounds::Vector{Dict{Int, Int}}, lastcands::Vector{In
 end
 
 """
-    tiebreak_borda(ballots::Vector{OrderedBallot}, lastcands::Vector{Int})
+    tiebreak_borda(ballots::Vector{OrderedBallot{T}}, lastcands::Vector{T}) where {T}
 
 Select for elimination the candidate of `lastcands` with the lowest Borda count,
 calculated from `ballots`.
@@ -133,7 +136,7 @@ calculated from `ballots`.
 If no single candidate of `lastcands` has the lowest Borda count, `nothing` is
 returned.
 """
-function tiebreak_borda(ballots::Vector{OrderedBallot}, lastcands::Vector{Int})
+function tiebreak_borda(ballots::Vector{OrderedBallot{T}}, lastcands::Vector{T}) where {T}
     borda_score = filter((c, _)::Pair -> c in lastcands,
                          score(Borda(), ballots).votes)
     if sum(last.(borda_score) .== minimum(last.(borda_score))) == 1
@@ -142,7 +145,7 @@ function tiebreak_borda(ballots::Vector{OrderedBallot}, lastcands::Vector{Int})
 end
 
 """
-    tiebreak_coombs(ballots::Vector{OrderedBallot}, lastcands::Vector{Int})
+    tiebreak_coombs(ballots::Vector{OrderedBallot{T}}, lastcands::Vector{T}) where {T}
 
 Select for elimination the candidate of `lastcands` with the most last-place votes.
 Should this result in ties, the (n-1)th place votes are added etc. until a single
@@ -151,7 +154,7 @@ candidate has the most cumulative last-place votes.
 Should no single candidate of `lastcands` have the most votes after considering all
 places, `nothing` is returned.
 """
-function tiebreak_coombs(ballots::Vector{OrderedBallot}, lastcands::Vector{Int})
+function tiebreak_coombs(ballots::Vector{OrderedBallot{T}}, lastcands::Vector{T}) where {T}
     place = maximum(b -> length(b.ranking), ballots) + 1
     placescores = Dict(c => 0 for c in lastcands)
     while place > 0 && sum(values(placescores) .== minimum(values(placescores))) > 1
