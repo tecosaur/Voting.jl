@@ -23,16 +23,25 @@ end
 Base.keys(r::Union{CountSingleResult, CountMultiResult}) = Iterators.map(first, r.scores)
 
 function Base.show(io::IO, ::MIME"text/plain", result::CountSingleResult)
-    print(io, typeof(result), styled": winner is {success:$(winner(result))}")
+    print(io, styled"{bold:$(typeof(result.method)) election}: winner is {success:$(winner(result))}")
+    nshow = min(length(result.scores), first(displaysize(io)) ÷ 2)
+    cpad = maximum(textwidth, map(string ∘ first, @view result.scores[1:nshow]))
+    for (i, (cand, score)) in enumerate(@view result.scores[1:nshow])
+        print(io, styled"\n  {emphasis:$i.}  $(rpad(cand, cpad))  {shadow:($score)}")
+    end
+    if nshow < length(result.scores)
+        print(io, styled"\n  {shadow:⋮}")
+    end
 end
 
 function Base.show(io::IO, ::MIME"text/plain", result::CountMultiResult)
-    print(io, typeof(result), ": winners are")
+    print(io, styled"{bold:$(typeof(result.method)) election}: winners are")
     if get(io, :compact, false)
         print(io, ' ', result.winners)
     else
+        wpad = maximum(textwidth, map(string, result.winners))
         for (i, winner) in enumerate(result.winners)
-            print(io, styled"\n  {emphasis:$i.}  $winner  {shadow:[$(result[winner])]}")
+            print(io, styled"\n  {emphasis:$i.}  $(rpad(winner, wpad))  {shadow:($(result[winner]))}")
         end
     end
 end
